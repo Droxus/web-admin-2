@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <style>
+    .admin-panel {
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .wallet-info {
+      margin-bottom: 20px;
+    }
+    .action-item {
+      margin-bottom: 15px;
+    }
+    .action-item hr {
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="admin-panel">
+    <h1>Admin Panel</h1>
+
+    <div id="wallet-info" class="wallet-info">
+      <p>Loading wallet info...</p>
+    </div>
+
+    <div id="last-actions">
+      <h2>Last Actions</h2>
+      <p>Loading last actions...</p>
+    </div>
+  </div>
+
+  <script>
+    const walletInfoElement = document.getElementById("wallet-info");
+    const lastActionsElement = document.getElementById("last-actions");
+
+    // Fetch wallet information
+    async function fetchWalletInfo() {
+      try {
+        const response = await fetch("http://localhost:3002/wallet-info");
+        const data = await response.json();
+        displayWalletInfo(data.data);
+      } catch (error) {
+        console.error("Error fetching wallet info:", error);
+      }
+    }
+
+    // Display wallet information
+    function displayWalletInfo(walletInfo) {
+      if (walletInfo) {
+        walletInfoElement.innerHTML = `
+          <p><strong>Address:</strong> ${walletInfo.address || "N/A"}</p>
+          <p><strong>Balance:</strong> ${walletInfo.balance} TON</p>
+          <p><strong>Scam Status:</strong> ${walletInfo.is_scam ? "🚨 Yes" : "✅ No"}</p>
+          <p><strong>Verified:</strong> ${walletInfo.is_verified ? "✅ Yes" : "❌ No"}</p>
+          <p><strong>Suspended:</strong> ${walletInfo.is_suspended ? "🚨 Yes" : "✅ No"}</p>
+        `;
+      } else {
+        walletInfoElement.innerHTML = "<p>Failed to load wallet info.</p>";
+      }
+    }
+
+    // Fetch last actions
+    async function fetchLastActions() {
+      try {
+        const response = await fetch("http://localhost:3002/last-actions");
+        const data = await response.json();
+        displayLastActions(data.actions);
+      } catch (error) {
+        console.error("Error fetching last actions:", error);
+      }
+    }
+
+    // Display last actions
+    function displayLastActions(actions) {
+      if (actions.length > 0) {
+        const actionsList = actions.map(action => {
+          return `
+            <li class="action-item">
+              <p><b>End Time:</b> ${formatDate(action.end_utime)}</p>
+              <p><b>Success:</b> ${action.success ? "✅ Yes" : "❌ No"}</p>
+              <p><b>Opcode:</b> ${formatOpcode(action.details.opcode)}</p>
+              <p><b>Source:</b> ${action.details.source}</p>
+              <p><b>Value:</b> ${action.details.value} TON</p>
+              <p><b>Paid:</b> ${action.paid ? "✅ Yes" : "❌ No"}</p>
+              <hr />
+            </li>
+          `;
+        }).join('');
+        lastActionsElement.innerHTML = `<ul>${actionsList}</ul>`;
+      } else {
+        lastActionsElement.innerHTML = "<p>No recent actions found.</p>";
+      }
+    }
+
+    // Format date from Unix timestamp
+    function formatDate(timestamp) {
+      const date = new Date(timestamp * 1000); // Convert to readable date
+      return date.toLocaleString();
+    }
+
+    // Format opcode
+    function formatOpcode(opcode) {
+      if (opcode === "0x5ae8724b") return "Buy Level";
+      if (opcode === "0x2ba86c9a") return "Payback";
+      return "Unknown";
+    }
+
+    // Initial fetch
+    fetchWalletInfo();
+    fetchLastActions();
+  </script>
+</body>
+</html>
